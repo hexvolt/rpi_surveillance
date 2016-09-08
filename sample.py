@@ -92,6 +92,7 @@ def insert_stream(youtube, options):
         insert_stream_response["id"], snippet["title"]))
     return insert_stream_response["id"]
 
+
 # Bind the broadcast to the video stream. By doing so, you link the video that
 # you will transmit to YouTube to the broadcast that the video is for.
 def bind_broadcast(youtube, broadcast_id, stream_id):
