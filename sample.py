@@ -1,5 +1,4 @@
 import httplib2
-import os
 import sys
 
 from googleapiclient.discovery import build
@@ -8,30 +7,18 @@ from oauth2client.client import flow_from_clientsecrets
 from oauth2client.file import Storage
 from oauth2client.tools import argparser, run_flow
 
-# This OAuth 2.0 access scope allows for full read/write access to the
-# authenticated user's account.
-YOUTUBE_READ_WRITE_SCOPE = "https://www.googleapis.com/auth/youtube"
-YOUTUBE_API_SERVICE_NAME = "youtube"
-YOUTUBE_API_VERSION = "v3"
-
-# This variable defines a message to display if the CLIENT_SECRETS_FILE is
-# missing.
-CLIENT_SECRETS_FILE = "client_secrets.json"
-MISSING_CLIENT_SECRETS_MESSAGE = """
-WARNING: Please configure OAuth 2.0
-To make this sample run you will need to populate the client_secrets.json file
-found at:
-   %s
-with information from the {{ Cloud Console }}
-{{ https://cloud.google.com/console }}
-For more information about the client_secrets.json file format, please visit:
-https://developers.google.com/api-client-library/python/guide/aaa_client_secrets
-""" % os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                   CLIENT_SECRETS_FILE))
+from settings import (
+    CLIENT_SECRETS_FILE,
+    YOUTUBE_READ_WRITE_SCOPE,
+    MISSING_CLIENT_SECRETS_MESSAGE,
+    YOUTUBE_API_SERVICE_NAME,
+    YOUTUBE_API_VERSION
+)
 
 
 def get_authenticated_service(args):
-    flow = flow_from_clientsecrets(CLIENT_SECRETS_FILE,
+
+    flow = flow_from_clientsecrets(filename=CLIENT_SECRETS_FILE,
                                    scope=YOUTUBE_READ_WRITE_SCOPE,
                                    message=MISSING_CLIENT_SECRETS_MESSAGE)
 
@@ -45,9 +32,12 @@ def get_authenticated_service(args):
                  http=credentials.authorize(httplib2.Http()))
 
 
-# Create a liveBroadcast resource and set its title, scheduled start time,
-# scheduled end time, and privacy status.
 def insert_broadcast(youtube, options):
+    """
+    Create a liveBroadcast resource and set its title, scheduled start time,
+    scheduled end time, and privacy status.
+    """
+
     insert_broadcast_response = youtube.liveBroadcasts().insert(
         part="snippet,status",
         body=dict(
@@ -67,12 +57,16 @@ def insert_broadcast(youtube, options):
     print("Broadcast '%s' with title '%s' was published at '%s'." % (
         insert_broadcast_response["id"], snippet["title"],
         snippet["publishedAt"]))
+
     return insert_broadcast_response["id"]
 
 
-# Create a liveStream resource and set its title, format, and ingestion type.
-# This resource describes the content that you are transmitting to YouTube.
 def insert_stream(youtube, options):
+    """
+    Create a liveStream resource and set its title, format, and ingestion type.
+    This resource describes the content that you are transmitting to YouTube.
+    """
+
     insert_stream_response = youtube.liveStreams().insert(
         part="snippet,cdn",
         body=dict(
@@ -90,12 +84,16 @@ def insert_stream(youtube, options):
 
     print("Stream '%s' with title '%s' was inserted." % (
         insert_stream_response["id"], snippet["title"]))
+
     return insert_stream_response["id"]
 
 
-# Bind the broadcast to the video stream. By doing so, you link the video that
-# you will transmit to YouTube to the broadcast that the video is for.
 def bind_broadcast(youtube, broadcast_id, stream_id):
+    """
+    Bind the broadcast to the video stream. By doing so, you link the video
+    that you will transmit to YouTube to the broadcast that the video is for.
+    """
+
     bind_broadcast_response = youtube.liveBroadcasts().bind(
         part="id,contentDetails",
         id=broadcast_id,
@@ -120,9 +118,11 @@ if __name__ == "__main__":
     args = argparser.parse_args()
 
     youtube = get_authenticated_service(args)
+
     try:
         broadcast_id = insert_broadcast(youtube, args)
         stream_id = insert_stream(youtube, args)
         bind_broadcast(youtube, broadcast_id, stream_id)
+
     except HttpError as e:
         print("An HTTP error %d occurred:\n%s" % (e.resp.status, e.content))
